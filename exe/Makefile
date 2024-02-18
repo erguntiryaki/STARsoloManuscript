@@ -4,6 +4,15 @@ all: salmon_1.4.0 STAR_2.7.9a generateDecoyTranscriptome.sh mashmap bedtools bwa
 
 include ../Mf.pars
 
+# Target to install Miniconda
+install-conda:
+	@echo "Installing Miniconda..."
+	wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O Miniconda3.sh && \
+	bash Miniconda3.sh -b -p $$HOME/miniconda && \
+	export PATH="$$HOME/miniconda/bin:$$PATH" && \
+	. $$HOME/miniconda/bin/activate && conda init bash
+	@echo "Conda installed successfully."
+
 salmon_%:
 	mkdir -p $@_distr && cd $@_distr && \
 	wget https://github.com/COMBINE-lab/salmon/releases/download/v$*/salmon-$*_linux_x86_64.tar.gz && \
@@ -60,15 +69,6 @@ bedtools:
 #	eval "$$(conda shell.bash hook)" && conda activate alevin-fry_0.1.0 && \
 #	conda install -y -c bioconda alevin-fry=0.1.0 &&\
 #	mkdir -p alevin-fry_0.1.0
-
-# Target to install Miniconda
-install-conda:
-	@echo "Installing Miniconda..."
-	wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O Miniconda3.sh && \
-	bash Miniconda3.sh -b -p $$HOME/miniconda && \
-	export PATH="$$HOME/miniconda/bin:$$PATH" && \
-	. $$HOME/miniconda/bin/activate && conda init bash
-	@echo "Conda installed successfully."
 
 # Target to create and setup the alevin-fry_0.1.0 environment
 alevin-fry_0.1.0: install-conda
