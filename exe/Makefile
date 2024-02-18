@@ -55,11 +55,30 @@ bedtools:
 	chmod u+x bedtools.static.binary &&\
 	ln -s bedtools.static.binary bedtools
 
-alevin-fry_0.1.0:
-	conda create -y -n alevin-fry_0.1.0 python==3.8 pip
-	eval "$$(conda shell.bash hook)" && conda activate alevin-fry_0.1.0 && \
-	conda install -y -c bioconda alevin-fry=0.1.0 &&\
-	mkdir -p alevin-fry_0.1.0
+#alevin-fry_0.1.0:
+#	conda create -y -n alevin-fry_0.1.0 python==3.8 pip
+#	eval "$$(conda shell.bash hook)" && conda activate alevin-fry_0.1.0 && \
+#	conda install -y -c bioconda alevin-fry=0.1.0 &&\
+#	mkdir -p alevin-fry_0.1.0
+
+# Target to install Miniconda
+install-conda:
+	@echo "Installing Miniconda..."
+	wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O Miniconda3.sh && \
+	bash Miniconda3.sh -b -p $$HOME/miniconda && \
+	export PATH="$$HOME/miniconda/bin:$$PATH" && \
+	. $$HOME/miniconda/bin/activate && conda init bash
+	@echo "Conda installed successfully."
+
+# Target to create and setup the alevin-fry_0.1.0 environment
+alevin-fry_0.1.0: install-conda
+	@echo "Creating and activating alevin-fry_0.1.0 environment..."
+	@/bin/bash -c "source $$HOME/miniconda/bin/activate && \
+	conda create -y -n alevin-fry_0.1.0 python==3.8 pip && \
+	conda activate alevin-fry_0.1.0 && \
+	conda install -y -c bioconda alevin-fry=0.1.0 && \
+	mkdir -p alevin-fry_0.1.0"
+	@echo "alevin-fry_0.1.0 environment is ready."
 
 cellranger-5.0.1:
 	wget http://labshare.cshl.edu/shares/dobin/dobin/STARsolo/Preprint/10X/cellranger-5.0.1.tar.gz &&\
