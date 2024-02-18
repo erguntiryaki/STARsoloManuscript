@@ -11,10 +11,12 @@ salmon_%:
 	cd ../ && ln -s `find ./salmon_$*_distr/ -name salmon` $@
 
 bwa:
-	wget https://github.com/lh3/bwa/releases/download/v0.7.17/bwa-0.7.17.tar.bz2 &&\
-	tar xvfj bwa-0.7.17.tar.bz2 && 'rm' -f bwa-0.7.17.tar.bz2 && \
-	cd bwa-0.7.17 && make && cd .. &&\
-	ln -s bwa-0.7.17/bwa bwa
+#	wget https://github.com/lh3/bwa/releases/download/v0.7.17/bwa-0.7.17.tar.bz2 &&\
+#	tar xvfj bwa-0.7.17.tar.bz2 && 'rm' -f bwa-0.7.17.tar.bz2 && \
+#	cd bwa-0.7.17 && make && cd .. &&\
+#	ln -s bwa-0.7.17/bwa bwa
+	sudo apt-get update
+	sudo apt-get install -y zlib1g-dev bwa
 
 STAR_%:
 	curl -o STAR_$* https://raw.githubusercontent.com/alexdobin/STAR/$*/bin/Linux_x86_64_static/STAR && \
