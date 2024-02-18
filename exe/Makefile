@@ -1,17 +1,23 @@
 SHELL=/bin/bash
 
-all: salmon_1.4.0 STAR_2.7.9a generateDecoyTranscriptome.sh mashmap bedtools bwa alevin-fry_0.1.0 kbpy_0.25.0 cellranger-5.0.1 gffread
+all: install-python-venv salmon_1.4.0 STAR_2.7.9a generateDecoyTranscriptome.sh mashmap bedtools bwa alevin-fry_0.1.0 kbpy_0.25.0 cellranger-5.0.1 gffread
 
 include ../Mf.pars
 
-# Target to install Miniconda
-install-conda:
-	@echo "Installing Miniconda..."
-	wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O Miniconda3.sh && \
-	bash Miniconda3.sh -b -p $$HOME/miniconda && \
-	export PATH="$$HOME/miniconda/bin:$$PATH" && \
-	. $$HOME/miniconda/bin/activate && conda init bash
-	@echo "Conda installed successfully."
+# Target to ensure Python3 and venv are installed
+install-python-venv:
+	@echo "Ensuring Python3 and venv are installed..."
+	sudo apt-get update && sudo apt-get install -y python3-venv
+	@echo "Python3 and venv are ensured."
+
+# Function to create a Python venv and install packages
+define create_venv_and_install
+	mkdir -p $(1) &&\
+	python3 -m venv $(1)/venv &&\
+	. $(1)/venv/bin/activate &&\
+	pip install $(2) &&\
+	deactivate
+endef
 
 salmon_%:
 	mkdir -p $@_distr && cd $@_distr && \
@@ -20,10 +26,6 @@ salmon_%:
 	cd ../ && ln -s `find ./salmon_$*_distr/ -name salmon` $@
 
 bwa:
-#	wget https://github.com/lh3/bwa/releases/download/v0.7.17/bwa-0.7.17.tar.bz2 &&\
-#	tar xvfj bwa-0.7.17.tar.bz2 && 'rm' -f bwa-0.7.17.tar.bz2 && \
-#	cd bwa-0.7.17 && make && cd .. &&\
-#	ln -s bwa-0.7.17/bwa bwa
 	sudo apt-get update
 	sudo apt-get install -y zlib1g-dev bwa
 
@@ -32,22 +34,27 @@ STAR_%:
 	chmod u+x STAR_$*
 
 kbpy_0.25.0:
-	conda create -y -n kbpy_0.25.0 python==3.8 pip 
-	wget https://github.com/pachterlab/kb_python/archive/refs/tags/v0.25.0.tar.gz &&\
-	tar xvfz v0.25.0.tar.gz && rm v0.25.0.tar.gz
-	eval "$$(conda shell.bash hook)" && conda activate kbpy_0.25.0 &&\
-	cd kb_python-0.25.0 &&\
-	python setup.py install
+	$(call create_venv_and_install,$@,"kb-python==0.25.0")
 
 generateDecoyTranscriptome.sh:
 	wget https://github.com/COMBINE-lab/SalmonTools/raw/master/scripts/generateDecoyTranscriptome.sh &&\
 	chmod u+x generateDecoyTranscriptome.sh
+
+#alevin-fry_0.1.0:
+#	$(call create_venv_and_install,$@,"alevin-fry==0.1.0 -c bioconda")
+
+# Target for installing Rust and Cargo, if not already installed
+install-rust:
+	@echo "Installing Rust and Cargo..."
+	@curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+	@python -c "import os; os.environ['PATH'] += ':/root/.cargo/bin'; print('Modified PATH:', os.environ['PATH'])"
+	@echo "Rust and Cargo installed successfully."
 	
-alevin-fry_0.1.0:
-	conda create -y -n alevin-fry_0.1.0 python==3.8 pip
-	eval "$$(conda shell.bash hook)" && conda activate alevin-fry_0.1.0 && \
-	conda install -y -c bioconda alevin-fry=0.1.0 &&\
-	mkdir -p alevin-fry_0.1.0
+# Target for installing alevin-fry using Cargo
+alevin-fry_0.1.0: install-rust
+	@echo "Installing alevin-fry..."
+	@/bin/bash -c "source $$HOME/.cargo/env && cargo install alevin-fry"
+	@echo "alevin-fry installed successfully."
 
 cellranger-5.0.1:
 	wget http://labshare.cshl.edu/shares/dobin/dobin/STARsolo/Preprint/10X/cellranger-5.0.1.tar.gz &&\
@@ -57,32 +64,11 @@ mashmap:
 	wget https://github.com/marbl/MashMap/releases/download/v2.0/mashmap-Linux64-v2.0.tar.gz &&\
 	tar xvfz mashmap-Linux64-v2.0.tar.gz && 'rm' -f mashmap-Linux64-v2.0.tar.gz &&\
 	ln -s mashmap-Linux64-v2.0/mashmap
-	
 
 bedtools:
 	wget https://github.com/arq5x/bedtools2/releases/download/v2.30.0/bedtools.static.binary &&\
 	chmod u+x bedtools.static.binary &&\
 	ln -s bedtools.static.binary bedtools
-
-#alevin-fry_0.1.0:
-#	conda create -y -n alevin-fry_0.1.0 python==3.8 pip
-#	eval "$$(conda shell.bash hook)" && conda activate alevin-fry_0.1.0 && \
-#	conda install -y -c bioconda alevin-fry=0.1.0 &&\
-#	mkdir -p alevin-fry_0.1.0
-
-# Target to create and setup the alevin-fry_0.1.0 environment
-alevin-fry_0.1.0: install-conda
-	@echo "Creating and activating alevin-fry_0.1.0 environment..."
-	@/bin/bash -c "source $$HOME/miniconda/bin/activate && \
-	conda create -y -n alevin-fry_0.1.0 python==3.8 pip && \
-	conda activate alevin-fry_0.1.0 && \
-	conda install -y -c bioconda alevin-fry=0.1.0 && \
-	mkdir -p alevin-fry_0.1.0"
-	@echo "alevin-fry_0.1.0 environment is ready."
-
-cellranger-5.0.1:
-	wget http://labshare.cshl.edu/shares/dobin/dobin/STARsolo/Preprint/10X/cellranger-5.0.1.tar.gz &&\
-	tar xvfz cellranger-5.0.1.tar.gz && 'rm' -f cellranger-5.0.1.tar.gz
 
 gffread:
 	wget https://github.com/gpertea/gffread/releases/download/v0.12.6/gffread-0.12.6.Linux_x86_64.tar.gz &&\
